@@ -5,7 +5,7 @@ credentials:
       - usernamePassword:
           description: "dodocker"
           id: "dodocker"
-          password: "{AQAAABAAAABQI6Ac7eQ3nAmotwxrq0jkRBJFrx1KaxUfddsA+gSyxHQPd7oyRwjOxUGVPBFY0ePjncF2Qg5zEjs4ffgMqjrihNmMARFI+ermNLudr2cVx785zipCP2vcrHdJVos0kVqH}"
+          password: "{AQAAABAAAABQIoBo7x+8mfaGb3CxtF5db7u0Ba7SFqGHESAsVy9XmD2jUaFkiaz/MmvQtLdOo7Qq62ymfIZnqMEEB1ou9XqIKwbhqez8cx+gDhdpAIPS9S8xkDJ3cBtBBr6KoGvfDUWv}"
           scope: GLOBAL
           username: "988073541e7b94d7cace72acec117204714390264936d840037beb6dba932216"
 jenkins:
@@ -43,25 +43,23 @@ jenkins:
             successThreshold: 0
             timeoutSeconds: 0
           name: "jnlp"
-          resourceLimitCpu: "100m"
+          resourceLimitCpu: "512m"
           resourceLimitMemory: "512Mi"
-          resourceRequestCpu: "100m"
+          resourceRequestCpu: "512m"
           resourceRequestMemory: "512Mi"
           workingDir: "/home/jenkins"
-        id: "7e174042-5d73-4bdc-8698-d64fa89a58d0"
+        id: "8f1ce00e-9878-48a5-a768-d4c4bb32ce8d"
         label: "cd-jenkins-jenkins-slave "
         name: "default"
         podRetention: "never"
         serviceAccount: "default"
         yamlMergeStrategy: "override"
       - containers:
-        - args: "^${computer.jnlpmac} ^${computer.name}"
-          command: "/bin/sh -c"
-          envVars:
+        - envVars:
           - envVar:
-              key: "JENKINS_URL"
-              value: "http://cd-jenkins.default.svc.cluster.local:8080"
-          image: "gustavoapolinario/jenkins-docker"
+              key: "DOCKER_HOST"
+              value: "tcp://localhost:2375"
+          image: "docker"
           livenessProbe:
             failureThreshold: 0
             initialDelaySeconds: 0
@@ -69,12 +67,31 @@ jenkins:
             successThreshold: 0
             timeoutSeconds: 0
           name: "dind"
+          privileged: true
           resourceLimitCpu: "100m"
           resourceLimitMemory: "512Mi"
           resourceRequestCpu: "100m"
           resourceRequestMemory: "512Mi"
-          workingDir: "/home/jenkins"
-        id: "5c700c0e-278b-435d-8fd8-e1c3f7d938c4"
+          runAsUser: "0"
+          ttyEnabled: true
+          workingDir: "/home/jenkins/agent"
+        - image: "docker:18.09-dind"
+          livenessProbe:
+            failureThreshold: 0
+            initialDelaySeconds: 0
+            periodSeconds: 0
+            successThreshold: 0
+            timeoutSeconds: 0
+          name: "dind-deamon"
+          ports:
+          - containerPort: 2375
+            hostPort: 2375
+            name: "port-map"
+          privileged: true
+          runAsUser: "0"
+          ttyEnabled: true
+          workingDir: "/home/jenkins/agent"
+        id: "18a8ad3e-da92-4729-a46f-69e8e7987079"
         label: "cd-jenkins-jenkins-slave "
         name: "dind"
         nodeUsageMode: "NORMAL"
@@ -87,6 +104,7 @@ jenkins:
   disableRememberMe: false
   labelAtoms:
   - name: "cd-jenkins-jenkins-slave"
+  - name: "dind-zbbn0"
   - name: "master"
   markupFormatter: "plainText"
   mode: NORMAL
@@ -122,7 +140,7 @@ unclassified:
     configuredBuildDiscarders:
     - "jobBuildDiscarder"
   casCGlobalConfig:
-    configurationPath: "/var/jenkins_home/new_conf.yaml"
+    configurationPath: "https://raw.githubusercontent.com/Sittao/jenkins-build-test/main/jenkins.yaml"
   fingerprints:
     fingerprintCleanupDisabled: false
     storage: "file"
