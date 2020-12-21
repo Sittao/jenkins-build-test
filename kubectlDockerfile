@@ -1,5 +1,5 @@
 FROM bitnami/kubectl
 
 USER root
-ENTRYPOINT [ "/opt/bitnami/kubectl/bin" ]
+ENTRYPOINT [ "bash" ]
 CMD [ "kubectl --help" ]
