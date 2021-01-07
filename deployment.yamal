@@ -22,10 +22,8 @@ spec:
       - name: server
         image: gcr.io/PROJECT_ID/IMAGE_NAME:latest
         resources:
-          limits:
-            cpu: "10m"
           requests:
-            cpu: "10m"
+            cpu: "100m"
         ports:
         - containerPort: 80
         env:
