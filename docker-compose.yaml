@@ -8,4 +8,4 @@ services:
         environment:
             - "NODES=web1:80"
     web1:
-        image: gcr.io/loox-learn/looxlearn-user:latest
+        image: gcr.io/loox-learn/looxlearn-user:dev
