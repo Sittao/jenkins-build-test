@@ -1,89 +1,72 @@
----
-# The following is just like that above, but will configure a generally available container for all Pipelines using the configuration as code plugin
-jenkins:
-  clouds:
+clouds:
   - kubernetes:
-      connectTimeout: 5
-      # These variables must be present in the environment in order for the
-      # Jenkins agents to "find" the Jenkins master once they are launched,
-      # such that they may bootstrap.
-      jenkinsUrl: "http://${JENKINS_SERVICE_HOST}:${JENKINS_SERVICE_PORT}"
-      maxRequestsPerHostStr: "32"
+      containerCap: 10
+      containerCapStr: "10"
+      jenkinsTunnel: "jenkins-agent.jenkins.svc.cluster.local:50000"
+      jenkinsUrl: "http://jenkins.jenkins.svc.cluster.local:8080"
       name: "kubernetes"
-      readTimeout: 15
-      skipTlsVerify: true
+      namespace: "jenkins"
+      podLabels:
+      - key: "jenkins/jenkins-jenkins-agent"
+        value: "true"
+      serverUrl: "https://kubernetes.default"
       templates:
-      # The "docker" container allows for the building and validation of
-      # Docker containers on top of the existing kubernetes cluster without
-      # requiring the kubernetes cluster to expose access to its docker socket
       - containers:
-        - args: "cat"
-          command: "/bin/sh -c"
-          envVars:
-          - envVar:
-              key: 'DOCKER_HOST'
-              value: 'tcp://localhost:2375'
-          - envVar:
-              key: "DOCKER_TLS_CERTDIR"
-              value: "/certs"
-          - envVar:
-              key: "DOCKER_CERT_PATH"
-              value: "/certs/client"
-          - envVar:
-              key: "DOCKER_TLS_VERIFY"
-              value: "1"
-          image: 'docker:stable'
-          livenessProbe:
-            failureThreshold: 0
-            initialDelaySeconds: 0
-            periodSeconds: 0
-            successThreshold: 0
-            timeoutSeconds: 0
-          name: "docker"
-          ttyEnabled: true
-        - alwaysPullImage: true
-          envVars:
-          - envVar:
-              key: "DOCKER_TLS_CERTDIR"
-              value: "/certs"
-          image: 'docker:dind'
-          livenessProbe:
-            failureThreshold: 0
-            initialDelaySeconds: 0
-            periodSeconds: 0
-            successThreshold: 0
-            timeoutSeconds: 0
-          name: 'dind'
-          privileged: true
-          ttyEnabled: true
-        # The jenkins-agent image is required in order to have a Jenkins agent
-        # which can access resources like git.lo, etc.
-        #
-        # It is basically a jenkins agent image with our root certificate
-        # bundled into it
         - args: "^${computer.jnlpmac} ^${computer.name}"
-          command: ""
+          command: "sleep"
+          envVars:
+          - envVar:
+              key: "JENKINS_URL"
+              value: "http://jenkins.jenkins.svc.cluster.local:8080/"
           image: "jenkins/inbound-agent:4.11-1"
-          alwaysPullImage: true
           livenessProbe:
             failureThreshold: 0
             initialDelaySeconds: 0
             periodSeconds: 0
             successThreshold: 0
             timeoutSeconds: 0
-          # The name "jnlp" is special and required in order to override the
-          # built in container which the Kubernetes pod launches.
           name: "jnlp"
+          resourceLimitCpu: "512m"
+          resourceLimitMemory: "512Mi"
+          resourceRequestCpu: "512m"
+          resourceRequestMemory: "512Mi"
+          workingDir: "/home/jenkins/agent"
+        id: "e9439390bbcb5b752c710a85daab2fad486d17ce9d1093078a024a15f20aa4ab"
+        label: "jenkins-jenkins-agent"
+        name: "default"
+        nodeUsageMode: "NORMAL"
+        podRetention: "never"
+        serviceAccount: "default"
+        slaveConnectTimeout: 100
+        slaveConnectTimeoutStr: "100"
+        yamlMergeStrategy: "override"
+      - containers:
+        - envVars:
+          - envVar:
+              key: "DOCKER_HOST"
+              value: "tcp://localhost:2375"
+          image: "docker:18.09-dind"
+          livenessProbe:
+            failureThreshold: 0
+            initialDelaySeconds: 0
+            periodSeconds: 0
+            successThreshold: 0
+            timeoutSeconds: 0
+          name: "dind-deamon"
+          ports:
+          - containerPort: 2375
+            hostPort: 2375
+            name: "port-map"
+          privileged: true
+          resourceLimitCpu: "100m"
+          resourceLimitMemory: "512Mi"
+          resourceRequestCpu: "100m"
+          resourceRequestMemory: "512Mi"
+          runAsUser: "0"
           ttyEnabled: true
-        label: 'docker'
-        name: 'docker'
-        volumes:
-        - emptyDirVolume:
-            memory: false
-            mountPath: '/var/lib/docker'
-        - emptyDirVolume:
-            memory: false
-            mountPath: "/certs"
-        workspaceVolume:
-          emptyDirWorkspaceVolume:
-            memory: false
+          workingDir: "/home/jenkins/agent"
+        id: "5f77dd5a-8fe5-492b-830c-4f27570fea97"
+        label: "docker-dind"
+        name: "docker-dind"
+        yamlMergeStrategy: "override"
+  
